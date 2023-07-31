@@ -1,0 +1,683 @@
+---
+title: '''Apply'' Family of functions'
+author: "Ryan Denton"
+date: "2022-08-15"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+
+
+##------------- import data
+
+
+
+
+
+
+```{r}
+
+list.files()
+
+
+Chicago = read.csv("Chicago-F.csv", row.names = 1)
+
+
+Houston = read.csv("Houston-F.csv", row.names = 1)
+
+
+NewYork = read.csv("NewYork-F.csv", row.names = 1)
+
+
+SanFrancisco = read.csv("SanFrancisco-F.csv", row.names = 1)
+
+
+
+
+
+
+#check:
+Chicago
+
+Houston
+
+NewYork
+
+SanFrancisco
+
+
+
+
+
+#are these dataframes?
+is.data.frame(Chicago)
+
+
+is.data.frame(Houston)
+
+
+is.data.frame(NewYork)
+
+
+is.data.frame(SanFrancisco)
+
+
+
+#YES, now lets convert them to a matrix
+Chicago = as.matrix(Chicago)
+
+Houston = as.matrix(Houston)
+
+NewYork = as.matrix(NewYork)
+
+SanFrancisco = as.matrix(SanFrancisco)
+
+
+
+
+
+#check to make sure they are now a matrix:
+is.matrix(Chicago)
+
+is.matrix(Houston)
+
+is.matrix(NewYork)
+
+is.matrix(SanFrancisco)
+
+
+
+
+
+
+
+#now lets put all of these into a list as well as create the names for the list:
+Weather = list(Chicago = Chicago, Houston = Houston,
+               NewYork = NewYork, SanFrancisco = SanFrancisco)
+
+
+
+
+#check:
+Weather
+
+
+
+
+#try it out:
+Weather[[2]]
+
+Weather$Chicago
+
+
+
+Weather[1]
+
+```
+
+
+
+
+
+
+
+
+
+
+
+##----------------- What is the 'Apply Family' ??
+
+
+
+
+
+
+
+
+```{r}
+
+#EXAMPLE:
+apply(Chicago, 1, mean)
+#this will go through the chicago matrix and find the mean of each row (if we put 2 instead of 1 it would be of each column)
+
+
+
+
+
+#ex:
+apply(Houston, 1, max)
+#find max of each row in Houston matrix
+#.
+#..
+#... You get the idea thus far
+
+
+
+
+
+
+
+#EX:
+apply(NewYork, 1, min)
+
+```
+
+
+
+
+
+
+
+
+
+
+##---------------------- Using 'apply()'
+
+
+
+
+
+```{r}
+#average for every row in the chicago matrix:
+apply(Chicago, 1, mean)
+
+
+#check one of them as a sort of 'spot-check'
+mean(Chicago['AvgHigh_F', ]) #GOOD DEAL
+
+
+
+
+
+
+
+#look at the max & min:
+apply(Chicago, 1, max)
+
+apply(Chicago, 1, min)
+
+
+
+
+
+
+
+
+#now lets use this to create variables and compare the cities:
+Chicago_row_means = apply(Chicago, 1, mean)
+
+Houston_row_means = apply(Houston, 1, mean)
+
+SanFran_row_means = apply(SanFrancisco, 1, mean)
+
+NewYork_row_means = apply(NewYork, 1, mean)
+
+
+
+
+
+#ONE way to consolidate this information:
+cbind(Annual.Avg.Chic = Chicago_row_means,
+      Annual.Avg.Houst = Houston_row_means,
+      Annual.Avg.SanFran = SanFran_row_means, 
+      Annual.Avg.NY = NewYork_row_means )
+
+
+
+
+
+#lets move on and see what else we can do.....
+
+```
+
+
+
+
+
+
+
+
+
+##---------------------- Recreating the apply functions with loops
+
+
+
+
+
+
+
+
+
+
+```{r}
+
+#find the mean of every row using loops:
+
+
+
+#need empty vector to place the data/results of loop
+output = NULL
+
+
+
+#begin:
+for(i in 1:5){
+  output[i] = mean(Chicago[i, ])
+}
+
+#check
+output
+
+
+
+#looks good, now want to change into a names vector:
+names(output) = rownames(Chicago)
+
+
+
+#check:
+output   #AND WA_LA!!!
+
+
+
+
+#BUT notice that the apply function is WWAAAAAAYYYYY more efficient and nicer to work with :)
+
+
+
+
+
+
+
+#practice:
+output2 = NULL
+
+
+for(i in 1:5){
+  output2[i] = max(Chicago[i, ])
+}
+
+
+names(output2) = rownames(Chicago)
+
+
+output2  # :D
+```
+
+
+
+
+
+
+
+##------------------------- Using 'lapply()'
+
+
+
+
+
+
+
+
+```{r}
+
+#say we have:
+Chicago
+#and we want to switch the rows and the columns:
+t(Chicago)
+
+
+
+
+#recall our weather list:
+Weather
+#and say we wanted to switch the rows and the columns for all the components of the list WITHOUT running the 't()' function for each one individuals (since that would be a lot if we had a list of 100+), so we use lapply():
+lapply(Weather, t) #this runs throught the weather list and runs the 't()' function to each component (ie: t(chicago), t(Houston), ....etc) and returns as a list
+
+
+
+
+mynewlist = lapply(Weather, t)
+
+
+
+
+
+
+
+
+
+
+
+#EX 2 , lets say we want to add a new row to chicago:
+rbind(Chicago, NewRow = 1:12)
+
+
+#now lets use the lapply function to do this to ALL the cities in our weather list:
+lapply(Weather, rbind, NewRow = 1:12)
+
+
+
+
+
+
+
+
+
+
+
+#EX 3, use the rowMeans function on each component of our weather list (find the row means of them):
+lapply(Weather, rowMeans)
+#look at that!! :) now we have a list with the annual averages of each city all together. Better than the one before when we used cbind, but we will make it even better in the future 
+
+
+
+
+
+
+
+
+#PRACTICE:
+lapply(Weather, rowSums)
+
+
+
+lapply(Weather, colSums) #note that this doesnt make sense with our data 
+
+
+
+lapply(Weather, colMeans) #note that this doesnt make sense with our data 
+```
+
+
+
+
+
+
+
+##---------------------- combining 'lapply()' with '[]'
+
+
+
+
+
+
+
+
+```{r}
+#recall
+Weather
+
+
+#say we wanted to extract the january average high from chicago:
+Weather$Chicago[1, 1]
+
+
+
+
+#now say we want to extract that same data point but for ALL the four cities in our weather list:
+
+lapply(Weather, '[', 1, 1)
+#-----OR-------
+lapply(Weather, '[', 'AvgHigh_F', 'Jan')
+
+
+
+
+
+
+#next say we want the first ROW for each city:
+lapply(Weather, '[', 1, )
+
+
+
+
+
+
+#next say we want all the metrics but just for march for each city:
+lapply(Weather, '[', , 3)
+#-----OR-----
+lapply(Weather, '[', , 'Mar')
+
+
+
+
+
+
+
+
+#next say we want the hours of sunshine in july for each city:
+lapply(Weather, '[', 5, 7 )
+```
+
+
+
+
+
+
+
+
+##------------------Adding your own functions
+
+
+
+
+
+
+
+
+```{r}
+
+#recall finding the row means for each component in our weather list:
+lapply(Weather, rowMeans)
+
+
+
+#now say we want to put our own function in place of rowmeans:
+lapply(Weather, function(x) x[1, ] ) #notice the different structure for the function written this way. This will take each component of the weather list and pick out the first row
+
+
+
+
+
+#could also find the mean of the 2nd row of each component:
+lapply(Weather, function(i)  mean(i[2, ]) )
+
+
+
+
+
+#could also just look at december for each one:
+lapply(Weather, function(i)  i[, 12])
+
+
+
+
+
+#now say we want to take the average high temp and subtract the average low temp for the entire row for each city:
+lapply(Weather, function(i)  (i[1, ] - i[2, ]) )
+
+
+#can change this difference into a decimal after dividing by the base of the average low temp:
+lapply(Weather, function(i)  round((i[1, ] - i[2, ])/ i[2, ] , 2 ))
+#this is the temp fluctuation percentages relative to the average low. we will improve on this before 'delivering it' (per the assignment for this section)
+```
+
+
+
+
+
+
+
+##-------------- Using 'sapply()'
+
+
+
+
+
+
+
+
+```{r}
+#this is like the lapply() but 'looks' to see if the data can be returned in a more appealing/better format. For example look at the difference:
+lapply(Weather, rowMeans)
+
+sapply(Weather, rowMeans)
+#The sapply one looks ALOT better!!!!! and can round to make look even better:
+round(sapply(Weather, rowMeans), 2)
+
+
+
+
+#------------------------------
+
+
+#EX: Avg_High_F for July:
+lapply(Weather, '[', 1, 7)
+
+
+sapply(Weather, '[', 1, 7) #AGAIN, this looks much better
+
+
+
+
+
+
+#------------------------------
+
+
+#EX: Avg_High_F for the 4th quarter(ie the last 3 months of the year):
+lapply(Weather, '[', 1, 10:12)
+
+sapply(Weather, '[', 1, 10:12) #AGAIN, this looks much better
+
+
+
+
+#----------------------------------
+
+
+#EX: 
+lapply(Weather, function(i)  round((i[1, ] - i[2, ])/ i[2, ] , 2 ))
+
+
+sapply(Weather, function(i)  round((i[1, ] - i[2, ])/ i[2, ] , 2 ))
+
+```
+
+
+
+
+
+
+
+
+
+##----------------------- Nesting 'apply' functions
+
+
+
+
+
+
+
+```{r}
+#lets look at the rowmeans example:
+lapply(Weather, rowMeans)
+
+
+
+#BUT notice that there is no such simple function for the maximums or mins. This is where nesting comes in.
+
+
+
+#look at the chicago data:
+Chicago
+
+#now lets look at the row maximums:
+apply(Chicago, 1, max)
+
+
+#now if we want to do this for every city in our weather list:
+sapply(Weather, apply, 1, max)
+
+#OR can do it more explicitly:
+sapply(Weather, function(x)  apply(x, 1, max))
+
+
+
+
+#can also do with min:
+sapply(Weather, apply, 1, min)
+#OR
+sapply(Weather, function(x)  apply(x, 1, min))
+
+
+
+
+
+
+#EX: do the same thing but for the difference in high and low:
+sapply(Weather, function(x)  apply(x, 1, max) - apply(x,1,min))
+
+
+```
+
+
+
+
+
+
+
+##--------------- 'which.max()' and 'which.min()'
+
+
+
+
+
+
+
+
+
+```{r}
+#recall our way of finding all the max and mins of each row for the cities:
+sapply(Weather, apply, 1, max)
+
+
+sapply(Weather, apply, 1, min)
+
+
+
+#now say we want which months those are and NOT the actual numbers.
+
+
+#to do it for just the first row, for example, chicago:
+names(which.max(Chicago[1, ]))
+
+
+#now say we want to do it for EACH row of chicago:
+apply(Chicago,
+      1,
+      function(x)  names(which.max(x)))
+
+
+
+
+
+#but now need to do it for the rest of the weather data list:
+sapply(Weather,
+       function(i) apply(i, 1, function(x)  names(which.max(x)))
+       )
+
+
+#WA-LA!!
+
+
+
+
+```

@@ -1,0 +1,479 @@
+---
+title: "Sect 3 - Lists"
+author: "Ryan Denton"
+date: "2022-08-01"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+
+
+##----------------- Import data
+
+
+```{r}
+
+list.files()
+
+
+
+util = read.csv("P3-Machine-Utilization.csv")
+
+
+#back up df:
+util_backup = util
+
+
+#check:
+head(util, 12)
+
+
+str(util)
+
+
+#change timestamp to factor:
+util$Timestamp = as.factor(util$Timestamp)
+
+
+#change machine to factor:
+util$Machine = as.factor(util$Machine)
+
+
+
+
+#check summary:
+summary(util)
+
+
+
+
+
+
+#need to derive a 'utilization' column and add to dataframe (this will be 1-percent_idle):
+util$Utilization = 1 - util$Percent.Idle
+
+
+#check:
+summary(util)
+
+```
+
+
+
+
+
+
+##--------------------- Handling Date-times in R
+
+
+
+
+```{r}
+#want to change the timestamp format
+
+
+
+tail(util) #tells us the format right now is: day/month/year
+
+
+
+#but there is also a universal standard in R:
+?POSIXct
+
+
+#this uses the year 1970 as an anchor and measures the time that has passed since then. So lets convert our timestamp column to that format.
+
+
+util$PosixTime = as.POSIXct(util$Timestamp, format = '%d/%m/%Y %H:%M')
+
+
+head(util)
+
+
+#tip, how to re-arrange columns in dataframe:
+
+
+#first rid the timestamp column:
+util$Timestamp = NULL
+
+
+
+#now move the PosixTime column to the leftmost:
+util = util[ , c(4,1,2,3)] #just override with columns in the order you want
+
+
+head(util) #BAM!!
+
+```
+
+
+
+
+
+
+
+
+##-------------------- What is a list??
+
+
+
+
+```{r}
+#list is like a vector but is not limited to only being able to contain elements of the same type. 
+
+
+
+#lets subset out DF:
+RL1 = util[util$Machine == 'RL1', ]
+
+
+
+
+summary(RL1)
+
+
+#clean up a bit:
+RL1$Machine = factor(RL1$Machine)
+
+
+
+#check:
+summary(RL1)  #there we go
+
+
+
+
+
+
+#construct list, with the following to start:
+#character: machine name
+#Vector: (min, mean, max)  utilization for the month (excluding U/K hours)
+#Logical:   has utilization ever fallen below 90%?? (TRUE / FALSE)
+
+#we know the machine name, next lets calculate the stats min, mean , and max and create a vector with those
+util_stats_rl1 = c(min(RL1$Utilization, na.rm = T),
+                   mean(RL1$Utilization, na.rm = T),
+                   max(RL1$Utilization, na.rm = T))
+
+
+#now lets take care of the logical to check for utilization falling below 90%
+util_under_90_flag = as.logical(length(which(RL1$Utilization < 0.9))) #as.logical returns true if it is greater than 0, we just want true or false if this condition is ever met, dont care about which ones exactly or how many (for this at least)
+
+
+#check:
+util_under_90_flag  #note this is true, meaning utilization did indeed fall below 90% at at least one point
+
+
+
+
+
+
+#now want to begin creating our list with these three things:
+list_rl1 = list('RL1', util_stats_rl1, util_under_90_flag)
+
+
+
+#check our list:
+list_rl1
+```
+
+
+
+
+
+
+##---------------naming componenets of a list
+
+
+
+
+
+```{r}
+#check out list:
+list_rl1
+
+
+
+#check the names of the list:
+names(list_rl1) #notice it says null, meaning it doesnt have names
+
+
+
+
+#lets assign names:
+names(list_rl1) = c('Machine', 'Stats', 'LowThreshold')
+
+
+
+
+#check:
+list_rl1
+
+
+
+#***another way to name: When creating the list you can do it there:
+#list_rl1 = list(Machine = 'RL1', Stats = util_stats_rl1, LowThreshold = util_under_90_flag)
+
+
+```
+
+
+
+
+
+
+
+##----- Extracting components from lists: [] VS [[]] vs $
+
+
+
+
+
+
+```{r}
+#there are 3 ways to extract data from a list: [], [[]], $
+
+
+#[] - returns list
+
+#[[]] - returns the actual object
+
+# $ - same as [[]] but looks better
+
+
+
+
+
+#lets look at our list:
+list_rl1
+
+
+#Lets start by addressing the first component using all three ways:
+list_rl1[1]  #gives the list
+
+
+
+list_rl1[[1]] #gives the object (vector here)
+
+
+
+list_rl1$Machine  #again gives object
+
+
+
+
+
+
+
+#now lets look at the second component:
+list_rl1[2]
+
+
+list_rl1[[2]]
+
+
+list_rl1$Stats
+
+
+
+
+
+
+#access the third element of the vector of the stats (the max utilization):
+list_rl1$Stats[3]
+
+
+
+```
+
+
+
+
+
+
+
+
+
+##------------- adding and deleting components
+
+
+
+
+
+
+
+```{r}
+#recall our list:
+list_rl1
+
+
+
+
+#Lets add some dummy info for practice, say we want to add a character 'New Info':
+list_rl1[4] = 'New Info'
+
+
+#check:
+list_rl1  #and we have indeed added the 4th component
+
+
+
+
+#another way to add:
+#we will add the vector on all hours in which the utilization is unknowns (the NA's)
+
+#first lets find where the utilization is unknown:
+RL1[is.na(RL1$Utilization), 'PosixTime' ]
+
+#now lets ad to our list:
+list_rl1$UnknownHours = RL1[is.na(RL1$Utilization), 'PosixTime' ]
+
+
+#check:
+list_rl1
+
+
+
+#now lets delete the component 4 'new info' that we added:
+list_rl1[4] = NULL
+
+
+
+#check
+list_rl1  #***NOTICE that numeration have shifted
+
+
+
+
+
+
+
+#lets add another element/component to our list (lets add the dataframe for this machine):
+list_rl1$Data = RL1
+
+
+#check:
+list_rl1
+
+
+
+summary(list_rl1)
+
+
+str(list_rl1)
+
+```
+
+
+
+
+
+
+
+
+##------------------ Subsetting a list
+
+
+
+
+
+
+
+
+```{r}
+
+#access first date of the unknown hours element:
+list_rl1$UnknownHours[1]
+
+
+
+
+#say we want 1 component of our list:
+list_rl1[2]
+
+
+
+
+#say we want 2 components of our list:
+list_rl1[c(1,4)]
+
+#OR
+list_rl1[c('Machine', 'UnknownHours')]
+
+
+
+#can also create a sublist:
+sublist_rl1 = list_rl1[c('Machine', 'Stats')]
+
+
+
+#check:
+sublist_rl1
+```
+
+
+
+
+
+
+
+
+##----------------- Creating a timeseries plot
+
+
+
+
+
+
+
+```{r}
+
+library(ggplot2)
+
+
+
+p = ggplot(data = util)
+
+
+
+p + geom_line(aes(x = PosixTime,
+                  y = Utilization,
+                  col = Machine),
+              size = 1.2) +
+  facet_grid(Machine ~ .) +
+  geom_hline(yintercept = 0.9,
+             col = 'grey',
+             size = 1.2,
+             linetype = 3)
+
+
+#save this plot:
+myplot = p + geom_line(aes(x = PosixTime,
+                  y = Utilization,
+                  col = Machine),
+              size = 1.2) +
+  facet_grid(Machine ~ .) +
+  geom_hline(yintercept = 0.9,
+             col = 'grey',
+             size = 1.2,
+             linetype = 3)
+
+
+
+
+#now lets add this plot to our list:
+list_rl1$Plot = myplot
+
+
+
+#check:
+list_rl1
+
+
+
+```

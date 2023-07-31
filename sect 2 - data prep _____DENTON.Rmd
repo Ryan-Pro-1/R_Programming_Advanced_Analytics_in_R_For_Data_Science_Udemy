@@ -1,0 +1,908 @@
+---
+title: "Sect 2 - Data prep"
+author: "Ryan Denton"
+date: '2022-07-12'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r}
+#set up and find data
+list.files()
+
+fin = read.csv("P3-Future-500-The-Dataset.csv", na.strings = c(''))
+
+
+
+
+#explore
+summary(fin)
+
+
+head(fin)
+tail(fin)
+
+
+
+str(fin)
+
+
+
+
+
+
+
+
+
+#want to change 'ID' and 'inception' to a factor type since wont be doing any mathh with it
+fin$ID = factor(fin$ID) 
+
+fin$Inception = factor(fin$Inception)
+
+fin$Revenue = factor(fin$Revenue)
+
+fin$Expenses = factor(fin$Expenses)
+
+
+
+str(fin)
+summary(fin)
+
+```
+
+
+
+
+##----------------The factor variable trap
+
+
+
+
+
+```{r}
+
+#create new vector to work with:
+a = c('12', '13', '14', '12', '12')
+
+
+
+typeof(a)
+
+
+
+#want to deal with these values as numbers not characters:
+b = as.numeric(a)
+
+
+#check
+typeof(b)  #'double' is a type of numeric
+
+b
+
+b -1
+
+
+
+
+
+#now say we want factors as numeric:
+
+#create factor:
+z = factor(c('12', '13', '14', '12', '12'))
+
+
+
+typeof(z)
+
+
+
+#now change to a numeric (convert factor to CHARACTER, then to a numeric):
+x = as.numeric(as.character(z))
+
+
+#check:
+typeof(x)   ##WA-LA :)
+
+
+x-3
+
+x *5
+
+x/4
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+##------------- FVT Example
+
+
+
+
+
+```{r}
+#look at fin df:
+head(fin)
+
+str(fin)
+
+
+#for example purposes, lets change profit to a factor:
+fin$Profit = factor(fin$Profit)
+
+
+
+
+#lets lets convert this back to a numeric:
+fin$Profit = as.numeric(as.character(fin$Profit))
+
+
+
+
+#check
+head(fin)
+summary(fin)
+
+
+
+
+
+#NOTE*******: IF YOU DO THIS CONVERSION WRONG YOUR DATA CAN BECOME VERY VERY WRONG AND ALL ANALYSIS WILL BE WRONG!!!!!!!!!!!!!!
+#(you can also lose the data you are working with by overwriting it incorrectly so be careful)
+```
+
+
+
+
+
+
+
+##---------------------------- 'GSUB()' and 'SUB()'
+
+
+
+
+
+
+```{r}
+#now want to change revenue, expenses, and growth to numeric while at the same time dealing with the commas and '$' - signs and the '%' signs in the data
+
+
+#sub will replace ONE INSTANCE of something, but we are interested in more than just one replacement and so we are interested in the GSUB function
+?gsub
+
+
+
+
+
+#lets start with the expenses column, here we want to get rid of the commas and the word 'dollars' in each data point so we can then turn it into numeric data:
+
+#heres how: gsub("(pattern we are looking for), "(what to replace it with)", (where we find it));
+fin$Expenses = gsub(' Dollars', '', fin$Expenses)
+
+
+head(fin) #notice now that 'dollars' is gone from the expenses data. 
+
+
+#next we want to rid the commas:
+fin$Expenses = gsub(',', '', fin$Expenses)
+
+
+head(fin) #WA-LA!!! :)
+
+str(fin) #notice expenses is now a character rather than factor (will use that later)
+
+
+
+
+
+#next lets rid the dollar signs and commas from revenue:
+fin$Revenue = gsub('\\$', '', fin$Revenue)
+#NOTICE THE DIFFERENCE WHEN RIDDING 'SPECIAL CHARACTER' IN R (NEED TO USE '\\')
+
+fin$Revenue = gsub(',', '', fin$Revenue)
+
+#check:
+head(fin)
+
+str(fin) #again it has become a character
+
+
+
+
+
+
+#next lets deal with the growth column (rid the %-sign):
+fin$Growth = gsub('%', '', fin$Growth)
+
+
+#check
+head(fin)
+
+str(fin)
+
+
+
+
+#NOW we want to convert each one of these from character to numeric:
+fin$Revenue = as.numeric(fin$Revenue)
+
+fin$Expenses = as.numeric(fin$Expenses)
+
+fin$Growth = as.numeric(fin$Growth)
+
+
+#check
+str(fin)
+
+summary(fin)
+```
+
+
+
+
+
+
+##-------------------------- Dealing with missing data
+
+
+
+
+
+
+```{r}
+#lets look at our dataset and see what data is missing
+#(look at excel table in excel as well as the comments on the missing data)
+
+```
+
+
+
+
+
+
+
+
+
+##--------------------------- What is an 'NA' (ie missing value)
+
+
+
+
+
+```{r}
+?NA
+
+#it is a logical missing value indicator.
+
+
+#recall the logical indicators/operators:
+
+TRUE  #1
+
+FALSE  #0
+
+
+
+
+#but now we are told that NA is one as well:
+NA
+
+
+
+#compare examples:
+
+TRUE == FALSE  #False
+
+
+TRUE == 5      #false
+
+
+TRUE == 1      #true (thats its representation numerically)
+
+
+F == 0    #same reasoning here
+
+
+
+#now lets check using NA:
+
+NA == T
+
+
+NA ==F
+
+
+NA ==5
+
+
+NA == NA
+
+
+#NOTICE that it is ALWAYS 'NA'!!!!
+
+
+```
+
+
+
+
+
+
+
+##-------------------- An elegant way to locate missing data
+
+
+
+
+
+
+```{r}
+#lets locate the missing data, lets first look at our dataset:
+head(fin, 24)
+
+
+#now you can see 'NA's (both alone and in brackets), and we also see just missing space for missing data
+
+
+
+
+
+
+#now we want to pull out see what rows are missing data:
+complete.cases(fin) #notice, for example, the third row is false indicating missing data
+
+
+#now we want to see a subset of the data with missing data (RECALL SUBSETTING):
+
+#this will pick out all data WITHOUT NAs
+fin[complete.cases(fin), ]
+
+#SO we want to negate that with '!':
+fin[!complete.cases(fin), ]
+#all these DO HAVE an NA in them
+
+
+#NOTICE that there is not all of the missing data rows because R is only picking out the ones that have NA in them and not picking out the ones that are just blank
+
+
+
+
+#to fix this we do it AT THE VERY BEGINNING WHEN IMPORTING THE DATA:
+#SO go back to the top and rather than:
+###fin = read.csv("P3-Future-500-The-Dataset.csv")
+
+#run:
+###fin = read.csv("P3-Future-500-The-Dataset.csv", na.strings = c('')
+
+#then re-run everything and come back to here and re-do the subsetting:
+
+
+
+
+
+#now lets do the subsetting:
+fin[!complete.cases(fin), ]   #notice there are a lot more
+
+```
+
+
+
+
+
+
+
+##----------------------Data filters: 'which()' for Non-missing data
+
+
+
+
+
+```{r}
+#look at the head of the data
+head(fin)
+
+#say we want to single out each row with a revenue of $9746272. 
+rev_9746272 = fin[fin$Revenue == 9746272, ]
+
+
+#notice after running this we get a bunch of 'NAs' because of the fact that they are in our data and R sees those as neither True nor False and so adds them into our subset. We need to fix this, which we deal with using the "which" operator:
+
+which(fin$Revenue == 9746272)
+#notice this returns 3, this is the row number(s) that are "True". So if pass this through our filtering we will get:
+rev_9746272 = fin[which(fin$Revenue == 9746272), ]
+
+
+rev_9746272  #now we get what we were looking for
+
+
+
+#lets run another example looking for those with 25 employees:
+
+#this will give us the row numbers in which the condition is "True" (ie there are 25 employees):
+which(fin$Employees == 25)
+
+
+
+#then we use that inside the filtering process to get all of the rows(companies) that have 25 employees:
+employees_25 = fin[which(fin$Employees == 25), ]
+
+
+employees_25
+
+
+
+#------------------------
+
+#PLAY AROUND TO PRACTICE::
+
+
+head(fin)
+
+fin[which(fin$State == 'OR'), ]
+
+
+
+
+#----------------------
+
+fin[which(fin$Inception == '2001'), ]
+
+
+#------------------------
+
+fin[which(fin$Revenue >= 20000000), ]
+
+#--------------------------
+
+fin[which(fin$Employees > 1500), ]
+
+
+```
+
+
+
+
+
+
+
+
+
+
+##-----------Data filters: 'is.na()' for missing data
+
+
+
+
+
+
+
+
+
+```{r}
+#now we will pick our the rows/data that DO HAVE NAs
+
+#look at top 24 rows
+head(fin, 24)
+
+
+
+
+#now say we want to pick out all the rows that have an 'NA' in the expenses column:
+fin[is.na(fin$Expenses), ]
+
+
+#SIDE*** note that if we wanted to only look at the data that DID have the info for expenses we would simply negate this to get:
+fin[!is.na(fin$Expenses), ]
+
+
+```
+
+
+
+
+
+
+
+##---------------Removing records with missing data
+
+
+
+
+
+
+```{r}
+#its a good idea to make a backup of your data so that if anything goes wrong when cleaning or filtering the data, you have this back up dataset to fall back on instead of having to do a ton more work to get back to the place you were at before you fucked up:
+fin_backup = fin
+
+
+
+
+
+#lets remove the data that are missing data in the 'Industry' column:
+
+#start by looking at the rows that have some missing values:
+fin[!complete.cases(fin), ]
+
+#notice that there are 2 rows that have data missing in the industry column. Those are the ones we want to work with:
+fin[is.na(fin$Industry), ]
+
+
+#now we just negate that in order to get all the data that DOES has info for the industry column:
+fin[!is.na(fin$Industry), ]
+
+
+#now, we just overwrite our original dataset with this to have the dataset be everything that HAS information on the Industry type:
+fin = fin[!is.na(fin$Industry), ]
+
+
+#check:
+fin     #notice row 14 and 15 are missing, as desired
+```
+
+
+
+
+
+
+
+##------------------Resetting the dataframe index
+
+
+
+
+
+
+
+
+```{r}
+#recall in the previous chunk of code we removed rows 14 and 15 cuz the data on industry was missing. We can notice that when we did this, the row numbers when looking at the data did NOT update:
+head(fin, 18)
+#so lets say that we want to change this so that the row number as seen on the data matches with the row number when counting the number of rows:
+rownames(fin) = 1:nrow(fin)
+
+
+#check:
+fin
+
+
+
+
+
+#TIP****** FASTER WAY TO DO SAME THING:
+rownames(fin) = NULL   #this will fix the indexing, resetting it**
+
+
+fin
+
+
+```
+
+
+
+
+
+
+##--------------- Factual analysis method: replacing missing data
+
+
+
+
+```{r}
+#lets begin by looking at the data where the 'State' is missing and fill that data in
+
+
+#find all rows with missing state data
+fin[!complete.cases(fin$State), ]
+
+#OR****:
+fin[is.na(fin$State), ]
+
+
+#now look at just the city = new york ones:
+fin[is.na(fin$State) & fin$City == 'New York', ]
+
+
+#now we want to correct those rows since we can infer the state from the city
+fin[is.na(fin$State) & fin$City == 'New York', 'State'] = 'NY'
+
+
+#Check (use row names):
+fin[c(11,377), ]  #and notice they are indeed fixed now
+
+
+
+
+
+#now lets do the rest:
+fin[is.na(fin$State), ]
+
+
+
+fin[is.na(fin$State) & fin$City == 'San Francisco', 'State'] = 'CA'
+
+
+#check:
+fin[c(82, 265), ] #WOOT WOOT!! :)
+
+
+
+
+
+#now look at what other data is left in terms of the ones that still have NAs:
+fin[!complete.cases(fin), ]
+
+
+#notice that it is indeed shrinking, so we are slowly but surely filling in the missing data  :)
+
+```
+
+
+
+
+
+
+
+
+
+##------------- median imputation method - replacing missing data
+
+
+
+
+
+```{r}
+
+# now lets deal with the missing data in the employees column, we will proxy these missing data using the median of all the employee data for all the ones in the same sector:
+
+
+#take  a look at the missing ones:
+fin[is.na(fin$Employees), ]
+
+
+
+#lets start with the greenfax one, so find median for all retail industries to use as a proxy:
+med_emplyees_RETAIL = median(fin[fin$Industry == 'Retail' , 'Employees'], na.rm = T)
+
+
+
+#now we want to replace that missing data with this median:
+fin[is.na(fin$Employees) & fin$Industry == 'Retail', 'Employees' ] = med_emplyees_RETAIL 
+
+
+
+
+#check:
+fin[fin$Name == 'Greenfax',  ]
+
+
+
+
+
+
+
+
+
+#now need to do the same thing for the other company:
+fin[is.na(fin$Employees), ]
+
+
+
+med_employees_FINSERVICES = median(fin[fin$Industry == 'Financial Services', 'Employees'], na.rm = T)
+
+
+
+fin[is.na(fin$Employees) & fin$Industry == 'Financial Services', 'Employees'] = med_employees_FINSERVICES
+
+
+#check
+fin[fin$Name == 'Westminster', ]
+
+
+
+
+
+
+
+
+
+#see how much missing data there is:
+fin[!complete.cases(fin), ]         #ONLY 4 MORE TO GO :)
+
+
+
+
+
+##----------------------
+
+
+#now lets work on the missing data in the growth column:
+fin[is.na(fin$Growth), ]
+
+
+#now lets do the same process we did above at the beginning of this chunck:
+med_growth_CONSTRUCTION = median(fin[fin$Industry == 'Construction', 'Growth' ], na.rm = T)
+
+
+
+fin[is.na(fin$Growth) & fin$Industry == 'Construction', 'Growth'] = med_growth_CONSTRUCTION
+
+
+
+#check:
+fin[fin$Name == 'Rednimdox', ]
+
+
+
+
+#see how much missing data there is:
+fin[!complete.cases(fin), ]         # 4 MORE TO GO STILL
+
+
+
+
+
+
+
+
+
+
+##---------------------------
+
+
+#now lets do the missing revenue data:
+med_revenue_CONSTRUCTION = median(fin[fin$Industry == 'Construction', 'Revenue'], na.rm = T)
+
+
+
+fin[is.na(fin$Revenue) & fin$Industry == 'Construction', 'Revenue'] = med_revenue_CONSTRUCTION
+
+
+
+#check:
+fin[!complete.cases(fin), ] 
+
+
+
+#now lets do expenses:
+med_expenses_CONSTRUCTION = median(fin[fin$Industry == 'Construction', 'Expenses'], na.rm = T)
+
+
+fin[is.na(fin$Expenses) & fin$Industry == 'Construction' & is.na(fin$Profit), 'Expenses'] = med_expenses_CONSTRUCTION      #notice the additional filter here to be sure we don't overwrite any expenses data that also has profit data as well. Cuz if it has profit and revenue, then we would know expenses and would not want to use the median in that case
+
+
+
+#check:
+fin[!complete.cases(fin), ]  #and we are moving right along
+```
+
+
+
+
+
+
+
+
+##------------------- Deriving values method - replacing missing data
+
+
+
+
+
+
+```{r}
+
+#find those missing profit data:
+fin[is.na(fin$Profit), 'Profit' ] = fin[is.na(fin$Profit), 'Revenue'] - fin[is.na(fin$Profit), 'Expenses' ]
+
+
+#check:
+fin[c(8, 42), ]
+
+
+
+#check what next:
+fin[!complete.cases(fin), ]
+
+
+
+
+#lastly lets fill in the missing data for expenses using similar method:
+fin[is.na(fin$Expenses), 'Expenses' ] = fin[is.na(fin$Expenses), 'Revenue'] - fin[is.na(fin$Expenses), 'Profit']
+
+
+#check:
+fin[15, ]
+
+
+
+#looks all good!! Now check:
+fin[!complete.cases(fin), ]
+
+
+
+#notice that the only one left is due to inception which we wont deal with here.
+
+
+#GOOD JOB!!! you filled in the missing data :) :)
+```
+
+
+
+
+
+
+##----------------------- Visualizing the Results
+
+
+
+
+
+```{r}
+
+#now lets create some visuals!!!!! :D
+
+library(ggplot2)
+
+
+
+#begin by creating variable :
+p = ggplot(data = fin)
+
+#now add some layers:
+p + geom_point(aes( x = Revenue,
+                    y = Expenses,
+                    size = Profit,
+                    col = Industry,
+                    alpha = 0.7))
+
+
+
+
+#now lets look at industry trends:
+
+d = ggplot( data = fin, aes( x = Revenue,
+                    y = Expenses,
+                    size = Profit,
+                    col = Industry,
+                    alpha = 0.7)) #this makes pre-set aesthetics to make use going forward look clean code - wise and easier/faster.
+
+d + geom_point() +
+  geom_smooth(fill = NA,
+                  size = 1.2)
+
+
+
+
+
+
+
+
+
+#now lets do a boxplot:
+f = ggplot(data = fin, 
+           aes(x = Industry,
+               y = Growth,
+               col = Industry))
+
+f + geom_jitter() + 
+  geom_boxplot(size = 1,
+               alpha = 0.6,
+               outlier.colour = NA)
+
+
+```
